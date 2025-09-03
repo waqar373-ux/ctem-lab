@@ -1,0 +1,9 @@
+- name: Block an IP on Kali
+  hosts: kali
+  become: yes
+  tasks:
+    - name: Block bad IP
+      ansible.builtin.command: iptables -I INPUT -s {{ bad_ip }} -j DROP
+    - name: Try saving rules (ignore if not present)
+      ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4
+      ignore_errors: yes

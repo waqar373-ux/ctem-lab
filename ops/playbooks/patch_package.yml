@@ -1,0 +1,11 @@
+- name: Patch a package on Kali
+  hosts: kali
+  become: yes
+  tasks:
+    - name: Update cache
+      ansible.builtin.apt:
+        update_cache: yes
+    - name: Upgrade target package to latest
+      ansible.builtin.apt:
+        name: "{{ package }}"
+        state: latest

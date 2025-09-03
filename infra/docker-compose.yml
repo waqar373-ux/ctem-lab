@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ctem
+      POSTGRES_PASSWORD: ctem
+      POSTGRES_DB: ctem
+    ports: ["5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ctem -d ctem"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  adminer:
+    image: adminer:latest
+    restart: unless-stopped
+    ports: ["8080:8080"]
+
+  api:
+    build: ../backend/api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PYTHONUNBUFFERED: "1"
+    ports: ["8000:8000"]
+
+  ingestor:
+    build: ../backend/ingestor
+    depends_on:
+      db:
+        condition: service_healthy
+
+  engine:
+    build: ../backend/engine
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build: ../backend/worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ANSIBLE_HOST_KEY_CHECKING: "false"
+      PYTHONUNBUFFERED: "1"
+    volumes:
+      - ../ops/playbooks:/app/playbooks:ro
+      - ~/.ssh/id_ed25519:/app/.ssh/id_ed25519:ro
+
+volumes:
+  pgdata: {}
